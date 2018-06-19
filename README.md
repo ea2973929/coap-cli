@@ -41,6 +41,7 @@ Usage
     -h, --help               output usage information
     -V, --version            output the version number
     -o, --observe            Observe the given resource
+    -m, --mime-type <type>   Add an accept header for the given type
     -n, --no-new-line        No new line at the end of the stream
     -p, --payload <payload>  The payload for POST and PUT requests
     -b, --block2 <option>    set the block2 size option
