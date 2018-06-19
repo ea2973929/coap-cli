@@ -6,6 +6,8 @@ var coap = require('coap')
 var request = coap.request
 var URL = require('url')
 var through = require('through2')
+var cbor = require('cbor')
+var JSON5 = require('json5')
 var method = 'GET' // default
 var url
 var req
@@ -14,6 +16,7 @@ program
   .version(version)
   .option('-o, --observe', 'Observe the given resource', 'boolean', false)
   .option('-n, --no-new-line', 'No new line at the end of the stream', 'boolean', true)
+  .option('-m, --mime-type <type>', 'Add an accept header for the given type')
   .option('-p, --payload <payload>', 'The payload for POST and PUT requests')
   .option('-b, --block2 <option>', 'set the block2 size option', parseInt)
   .option('-q, --quiet', 'Do not print status codes of received packets', 'boolean', false)
@@ -47,6 +50,7 @@ if (url.protocol !== 'coap:' || !url.hostname) {
 }
 
 coap.parameters.exchangeLifetime = program.timeout ? program.timeout : 30
+coap.registerFormat('application/cbor', 60)
 
 if (program.block2 && (program.block2 < 1 || program.block2 > 6)) {
   console.log('Invalid block2 size, valid range [1..6]')
@@ -60,6 +64,10 @@ if (program.block2) {
   req.setOption('Block2', new Buffer([program.block2]))
 }
 
+if (program.mimeType) {
+  req.setOption('Accept', program.mimeType)
+}
+
 req.on('response', function (res) {
   var endTime = new Date()
   if (program.showTiming) {
@@ -71,7 +79,17 @@ req.on('response', function (res) {
     process.stderr.write('\x1b[1m(' + res.code + ')\x1b[0m\n')
   }
 
-  res.pipe(through(function addNewLine (chunk, enc, callback) {
+  var payloadStream = res
+  // CBOR content type
+  if (res.options.find(function (option) {
+    return option.name === 'Content-Format' && option.value === 'application/cbor'
+  })) {
+    var cborDecoded = cbor.decode(res.payload)
+    payloadStream.push(JSON5.stringify(cborDecoded))
+    payloadStream.push(null)
+  }
+
+  payloadStream.pipe(through(function addNewLine (chunk, enc, callback) {
     if (!program.quiet) {
       process.stderr.write('\x1b[1m(' + res.code + ')\x1b[0m\t')
     }

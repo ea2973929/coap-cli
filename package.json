@@ -4,7 +4,8 @@
   "description": "A CLI for CoAP",
   "main": "index.js",
   "scripts": {
-    "test": "standard && mocha --bail --reporter spec --check-leaks"
+    "test": "standard && mocha --bail --reporter spec --check-leaks",
+    "autofix": "standard --fix"
   },
   "pre-commit": [
     "test"
@@ -36,8 +37,10 @@
     "standard": "^7.1.2"
   },
   "dependencies": {
+    "cbor": "^4.1.0",
     "coap": "~0.17.0",
     "commander": "~2.9.0",
+    "json5": "^1.0.1",
     "through2": "~2.0.0"
   }
 }
